@@ -1,35 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import NotFound from './pages/NotFound';
+import Login from './pages/Login';
+import Home from './pages/Home';
+
+// User Pages
+import UserDashboard from './pages/user/Dashboard';
+import UserEvents from './pages/user/Events';
+import UserOrgs from './pages/user/Orgs';
+
+// Org Pages
+import OrgDashboard from './pages/org/Dashboard';
+import EventsCRUD from './pages/org/EventsCRUD';
+import Attendees from './pages/org/Attendees';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <MainLayout>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected user routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute role="user">
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute role="user">
+              <UserEvents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orgs"
+          element={
+            <ProtectedRoute role="user">
+              <UserOrgs />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected org routes */}
+        <Route
+          path="/org"
+          element={
+            <ProtectedRoute role="org">
+              <OrgDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/org/events"
+          element={
+            <ProtectedRoute role="org">
+              <EventsCRUD />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/org/attendees"
+          element={
+            <ProtectedRoute role="org">
+              <Attendees />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 fallback */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </MainLayout>
+  );
 }
 
-export default App
+export default App;
