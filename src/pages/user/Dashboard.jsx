@@ -10,6 +10,22 @@ export default function UserDashboard() {
   const [errorMsg, setErrorMsg] = useState(null);
   const navigate = useNavigate();
 
+  const handleAttend = async (eventId) => {
+  const { error } = await supabase.from('attendances').insert([
+    {
+      event_id: eventId,
+      user_id: user.id,
+      attended_at: new Date().toISOString()
+    }
+  ]);
+  if (error) {
+    console.error('Error attending event:', error.message);
+  } else {
+    // Update local state
+    setAttendances([...attendances, { event_id: eventId, attended_at: new Date().toISOString() }]);
+  }
+};
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -75,25 +91,32 @@ export default function UserDashboard() {
         <p style={styles.info}>No events available.</p>
       ) : (
         <ul style={styles.list}>
-          {events.map((event) => (
-            <li key={event.id} style={styles.card}>
-              <h4>{event.title}</h4>
-              <p>{event.content}</p>
-              <p>
-                Attended:{' '}
-                {isAttended(event.id) ? (
-                  <span style={styles.attended}>✔ Yes</span>
-                ) : (
-                  <span style={styles.notAttended}>✘ No</span>
-                )}
-              </p>
-              {event.gform_link && (
-                <a href={event.gform_link} target="_blank" rel="noreferrer">
-                  Event Form
-                </a>
-              )}
-            </li>
-          ))}
+          {events.map((event) => {
+  const attended = isAttended(event.id);
+  return (
+    <li key={event.id} style={styles.card}>
+      <h4>{event.title}</h4>
+      <p>{event.content}</p>
+      <p>
+        Attended:{' '}
+        {attended ? (
+          <span style={styles.attended}>✔ Yes</span>
+        ) : (
+          <>
+            <span style={styles.notAttended}>✘ No</span>
+            <button onClick={() => handleAttend(event.id)}>Attend</button>
+          </>
+        )}
+      </p>
+      {event.gform_link && (
+        <a href={event.gform_link} target="_blank" rel="noreferrer">
+          Event Form
+        </a>
+      )}
+    </li>
+  );
+})}
+
         </ul>
       )}
     </div>

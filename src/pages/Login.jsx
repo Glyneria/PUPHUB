@@ -1,110 +1,225 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import React, { useState } from 'react';
+import { supabase } from "../lib/supabase";
+import { signIn } from '../services/auth.js';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from '../hooks/useAuth'; // adjust path if it's different
+import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState(null);
+const Login = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    role: 'user',
+  });
+
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setErrorMsg(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    // Step 1: Try logging in
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
 
-    if (error) {
-      setErrorMsg('Invalid credentials. Please try again.');
-      console.error('Login error:', error.message);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (error) setError('');
+  };
+
+
+  const handleRoleChange = (role) => {
+    setFormData((prev) => ({
+      ...prev,
+      role,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    const { email, password, role } = formData;
+
+    if (!email || !password) {
+      setError('Please fill in all fields.');
       return;
     }
 
-    // Step 2: Check role from 'users' or 'orgs' table
-    const { user } = data;
-    const { data: userProfile, error: roleError } = await supabase
-      .from('users') // or 'orgs' depending on your logic
-      .select('role') // make sure this field exists
-      .eq('id', user.id)
-      .single();
+    setIsLoading(true);
+    setError('');
 
-    if (roleError || !userProfile) {
-      setErrorMsg('Failed to retrieve user role.');
-      console.error('Role fetch error:', roleError?.message);
-      return;
-    }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const role = userProfile.role;
+      if (error) {
+        throw new Error(error.message);
+      }
 
-    // Step 3: Navigate based on role
-    if (role === 'user') {
-      navigate('/dashboard');
-    } else if (role === 'org') {
-      navigate('/org');
-    } else {
-      setErrorMsg('Invalid user role. Contact support.');
+      // Redirect based on role
+      if (role === 'org') {
+        navigate('/org/dashboard');
+      } else {
+        navigate('/user/dashboard');
+      }
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const { user, role } = useAuth();
+
+  useEffect(() => {
+    if (user && role) {
+      if (role === 'user') navigate('/user/dashboard');
+      else if (role === 'org') navigate('/org/dashboard');
+    }
+  }, [user, role]);
+
   return (
-    <div style={styles.container}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin} style={styles.form}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <button type="submit" style={styles.button}>Login</button>
-        {errorMsg && <p style={styles.error}>{errorMsg}</p>}
-      </form>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl"></div>
+
+
+      <div className="relative w-full max-w-md z-10">
+        {/* Logo & Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4 border border-red-500/30">
+            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-sm">P</span>
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome to PUPHub</h1>
+          <p className="text-gray-400">Sign in to your account</p>
+        </div>
+
+
+        {/* Login Form */}
+        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-800 shadow-2xl p-8">
+          <div className="space-y-6">
+            {/* Role Selector */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-300">I am a</label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-gray-800/50 rounded-lg">
+                {['user', 'org'].map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => handleRoleChange(role)}
+                    className={`px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                      formData.role === role
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/25'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                    }`}
+                  >
+                    {role === 'user' ? 'Regular User' : 'Organization'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-gray-300">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Enter your email"
+                required
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-colors"
+              />
+            </div>
+
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-gray-300">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter your password"
+                required
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-colors"
+              />
+            </div>
+
+
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+
+            {/* Submit Button */}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                isLoading
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transform hover:scale-[1.02]'
+              }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+
+
+            {/* Additional Links */}
+            <div className="text-center space-y-2">
+              <button className="text-sm text-gray-400 hover:text-red-400 transition-colors">
+                Forgot your password?
+              </button>
+              <div className="text-sm text-gray-400">
+                Don&apos;t have an account?{' '}
+                <Link to="/signup/user">
+                  <button className="text-red-400 hover:text-red-300 transition-colors font-medium">
+                    Sign up here
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-xs text-gray-500">
+            © 2025 PUPHub. Built for Polytechnic University of the Philippines
+          </p>
+        </div>
+      </div>
     </div>
   );
-}
-
-// Styles (basic inline)
-const styles = {
-  container: {
-    maxWidth: '400px',
-    margin: 'auto',
-    padding: '2rem',
-    border: '1px solid #ccc',
-    borderRadius: '8px',
-    marginTop: '4rem'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem'
-  },
-  input: {
-    padding: '0.5rem',
-    fontSize: '1rem'
-  },
-  button: {
-    padding: '0.5rem',
-    backgroundColor: '#0077cc',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px'
-  },
-  error: {
-    color: 'red',
-    marginTop: '1rem'
-  }
 };
+
+
+export default Login;
+
+

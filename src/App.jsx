@@ -1,9 +1,12 @@
+import { useNavigate } from 'react-router-dom';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './pages/NotFound';
 import Login from './pages/Login';
+import SignUp from './pages/SignUp';
 import Home from './pages/Home';
+import ChooseRole from './pages/ChooseRole';
 
 // User Pages
 import UserDashboard from './pages/user/Dashboard';
@@ -21,10 +24,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/choose-role" element={<ChooseRole />} />
+        <Route path="/signup/:role" element={<SignUp />} />
 
         {/* Protected user routes */}
         <Route
-          path="/dashboard"
+          path="/user/dashboard"
           element={
             <ProtectedRoute role="user">
               <UserDashboard />
@@ -50,7 +55,7 @@ function App() {
 
         {/* Protected org routes */}
         <Route
-          path="/org"
+          path="/org/dashboard"
           element={
             <ProtectedRoute role="org">
               <OrgDashboard />
