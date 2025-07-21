@@ -66,7 +66,8 @@ const HomePage = () => {
         }}
       />
 
-      <div className="container mx-auto px-6 py-20 relative z-10">
+      {/* Centered Main Content */}
+      <div className="flex flex-col justify-center items-center w-full relative z-10">
         {/* Header */}
         <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-red-400 to-yellow-300 bg-clip-text text-transparent text-center mb-8">
           PUPHub: Your Event Connection
@@ -89,7 +90,7 @@ const HomePage = () => {
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mx-auto">
           {features.map((feature, index) => (
             <div key={index} className="flex items-start space-x-4">
               {feature.icon}
